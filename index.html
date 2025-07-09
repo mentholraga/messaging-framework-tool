@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -415,6 +416,35 @@
             margin-right: 8px;
         }
         
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        
+        .pdf-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pdf-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.3);
+        }
+        
         .new-framework-btn {
             background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
             color: white;
@@ -426,8 +456,6 @@
             font-family: 'Poppins', sans-serif;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin: 40px auto 0;
-            display: block;
         }
         
         .new-framework-btn:hover {
@@ -490,6 +518,17 @@
             
             .main-card {
                 padding: 25px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .pdf-btn,
+            .new-framework-btn {
+                width: 100%;
+                max-width: 300px;
             }
         }
     </style>
@@ -677,15 +716,21 @@
                     <div class="pillars-grid" id="pillarsGrid"></div>
                 </div>
 
-                <button class="new-framework-btn" onclick="startNewFramework()">
-                    🔄 Generate New Framework
-                </button>
+                <div class="action-buttons">
+                    <button class="pdf-btn" onclick="generatePDF()">
+                        📄 Download PDF Report
+                    </button>
+                    <button class="new-framework-btn" onclick="startNewFramework()">
+                        🔄 Generate New Framework
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const API_BASE_URL = 'https://business-tools-api.onrender.com';
+        let currentData = null; // Store the current messaging data
 
         async function generateMessaging() {
             const company = document.getElementById('company').value.trim();
@@ -737,6 +782,7 @@
                 }
 
                 const data = await response.json();
+                currentData = data; // Store for PDF generation
                 displayResults(data);
 
             } catch (error) {
@@ -852,39 +898,3 @@
                         <div class="proof-point">${pillar.proofPoint}</div>
                     </div>
                 `;
-                container.appendChild(pillarCard);
-            });
-        }
-
-        function startNewFramework() {
-            // Reset form
-            document.getElementById('company').value = '';
-            document.getElementById('product').value = '';
-            document.getElementById('industry').value = '';
-            document.getElementById('targetAudience').value = '';
-            document.getElementById('keyFeatures').value = '';
-            document.getElementById('competitors').value = '';
-            document.getElementById('businessGoals').value = '';
-            document.getElementById('tonePreference').value = 'Professional and engaging';
-
-            // Show input section
-            document.getElementById('resultsSection').classList.remove('show');
-            document.getElementById('inputSection').style.display = 'block';
-
-            // Focus on company name input
-            document.getElementById('company').focus();
-        }
-
-        // Allow Enter key to submit from required fields
-        document.addEventListener('DOMContentLoaded', function() {
-            ['company', 'product'].forEach(id => {
-                document.getElementById(id).addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        generateMessaging();
-                    }
-                });
-            });
-        });
-    </script>
-</body>
-</html>
