@@ -898,3 +898,289 @@
                         <div class="proof-point">${pillar.proofPoint}</div>
                     </div>
                 `;
+                container.appendChild(pillarCard);
+            });
+        }
+
+        function generatePDF() {
+            if (!currentData) {
+                alert('No data available for PDF generation');
+                return;
+            }
+
+            // Check if jsPDF is loaded
+            if (!window.jspdf) {
+                alert('PDF library not loaded. Please refresh the page and try again.');
+                console.error('jsPDF library not found');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // PDF styling constants
+            const margins = { left: 20, right: 20, top: 20, bottom: 20 };
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const usableWidth = pageWidth - margins.left - margins.right;
+            let currentY = margins.top;
+
+            // Helper function to add new page if needed
+            function checkPageBreak(neededSpace) {
+                if (currentY + neededSpace > pageHeight - margins.bottom) {
+                    doc.addPage();
+                    currentY = margins.top;
+                    return true;
+                }
+                return false;
+            }
+
+            // Helper function to wrap and add text
+            function addWrappedText(text, x, y, maxWidth, fontSize = 10, style = 'normal') {
+                doc.setFontSize(fontSize);
+                doc.setFont('helvetica', style);
+                const lines = doc.splitTextToSize(text, maxWidth);
+                lines.forEach((line, index) => {
+                    if (index > 0) {
+                        checkPageBreak(fontSize * 0.5);
+                    }
+                    doc.text(line, x, y + (index * fontSize * 0.5));
+                });
+                return y + (lines.length * fontSize * 0.5);
+            }
+
+            // Header section
+            doc.setFillColor(255, 82, 82);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Product Messaging Framework', margins.left, 25);
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            const currentDate = new Date().toLocaleDateString();
+            doc.text(`Generated on ${currentDate}`, margins.left, 35);
+
+            currentY = 50;
+
+            // Company and Product Title
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            currentY = addWrappedText(currentData.product, margins.left, currentY, usableWidth, 20, 'bold');
+            
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            currentY = addWrappedText(currentData.company, margins.left, currentY + 5, usableWidth, 14);
+            
+            currentY += 15;
+
+            // Section helper function
+            function addSection(title, content, isValueProp = false) {
+                checkPageBreak(30);
+                
+                // Section title
+                doc.setTextColor(255, 82, 82);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText(title, margins.left, currentY, usableWidth, 14, 'bold');
+                currentY += 8;
+
+                // Content
+                doc.setTextColor(0, 0, 0);
+                if (isValueProp) {
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    currentY = addWrappedText(content, margins.left, currentY, usableWidth, 12, 'bold');
+                } else {
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    currentY = addWrappedText(content, margins.left, currentY, usableWidth, 10);
+                }
+                currentY += 12;
+            }
+
+            // Add sections
+            addSection('VALUE PROPOSITION', currentData.valueProposition, true);
+            addSection('TARGET AUDIENCE', currentData.targetAudience.profile);
+            addSection('ELEVATOR PITCH', currentData.elevatorPitch);
+            addSection('LONG DESCRIPTION', currentData.longDescription);
+
+            // Tone of Voice section
+            checkPageBreak(40);
+            doc.setTextColor(255, 82, 82);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            currentY = addWrappedText('TONE OF VOICE', margins.left, currentY, usableWidth, 14, 'bold');
+            currentY += 8;
+
+            // Tone adjectives
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const adjectivesText = 'Key adjectives: ' + currentData.toneOfVoice.adjectives.join(', ');
+            currentY = addWrappedText(adjectivesText, margins.left, currentY, usableWidth, 10);
+            currentY += 5;
+
+            // Tone examples
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            currentY = addWrappedText('Before: ', margins.left, currentY, usableWidth, 9, 'bold');
+            doc.setFont('helvetica', 'normal');
+            currentY = addWrappedText(currentData.toneOfVoice.beforeExample, margins.left + 25, currentY - 4, usableWidth - 25, 9);
+            
+            currentY += 3;
+            doc.setFont('helvetica', 'bold');
+            currentY = addWrappedText('After: ', margins.left, currentY, usableWidth, 9, 'bold');
+            doc.setFont('helvetica', 'normal');
+            currentY = addWrappedText(currentData.toneOfVoice.afterExample, margins.left + 25, currentY - 4, usableWidth - 25, 9);
+            currentY += 12;
+
+            // Outcomes section
+            function addListSection(title, items) {
+                checkPageBreak(30);
+                doc.setTextColor(255, 82, 82);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText(title, margins.left, currentY, usableWidth, 14, 'bold');
+                currentY += 8;
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                
+                items.forEach((item, index) => {
+                    checkPageBreak(15);
+                    const bulletText = `• ${item}`;
+                    currentY = addWrappedText(bulletText, margins.left, currentY, usableWidth, 10);
+                    currentY += 2;
+                });
+                currentY += 8;
+            }
+
+            addListSection('KEY OUTCOMES', currentData.outcomes);
+            addListSection('CUSTOMER REQUIREMENTS', currentData.customerRequirements);
+
+            // Outcome Pillars
+            checkPageBreak(40);
+            doc.setTextColor(255, 82, 82);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            currentY = addWrappedText('OUTCOME PILLARS', margins.left, currentY, usableWidth, 14, 'bold');
+            currentY += 12;
+
+            currentData.outcomePillars.forEach((pillar, index) => {
+                checkPageBreak(50);
+                
+                // Pillar name
+                doc.setTextColor(255, 82, 82);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText(`${index + 1}. ${pillar.pillarName}`, margins.left, currentY, usableWidth, 12, 'bold');
+                currentY += 8;
+
+                // Pain Points
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText('Pain Points:', margins.left + 10, currentY, usableWidth - 10, 10, 'bold');
+                currentY += 3;
+                
+                doc.setFont('helvetica', 'normal');
+                pillar.painPoints.forEach(point => {
+                    checkPageBreak(12);
+                    currentY = addWrappedText(`• ${point}`, margins.left + 15, currentY, usableWidth - 15, 9);
+                    currentY += 1;
+                });
+                currentY += 3;
+
+                // Benefits
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText('Benefits:', margins.left + 10, currentY, usableWidth - 10, 10, 'bold');
+                currentY += 3;
+                
+                doc.setFont('helvetica', 'normal');
+                pillar.benefits.forEach(benefit => {
+                    checkPageBreak(12);
+                    currentY = addWrappedText(`• ${benefit}`, margins.left + 15, currentY, usableWidth - 15, 9);
+                    currentY += 1;
+                });
+                currentY += 3;
+
+                // Features
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText('Feature Details:', margins.left + 10, currentY, usableWidth - 10, 10, 'bold');
+                currentY += 3;
+                
+                doc.setFont('helvetica', 'normal');
+                pillar.featureDetails.forEach(feature => {
+                    checkPageBreak(12);
+                    currentY = addWrappedText(`• ${feature}`, margins.left + 15, currentY, usableWidth - 15, 9);
+                    currentY += 1;
+                });
+                currentY += 3;
+
+                // Proof Point
+                doc.setFont('helvetica', 'bold');
+                currentY = addWrappedText('Proof Point:', margins.left + 10, currentY, usableWidth - 10, 10, 'bold');
+                currentY += 3;
+                
+                doc.setFont('helvetica', 'italic');
+                currentY = addWrappedText(pillar.proofPoint, margins.left + 15, currentY, usableWidth - 15, 9);
+                currentY += 10;
+            });
+
+            // Footer
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setTextColor(150, 150, 150);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Page ${i} of ${totalPages}`, pageWidth - margins.right - 30, pageHeight - 10);
+                doc.text('Generated by AI Product Messaging Generator', margins.left, pageHeight - 10);
+            }
+
+            // Save the PDF
+            const fileName = `${currentData.company}_${currentData.product}_Messaging_Framework.pdf`.replace(/[^a-zA-Z0-9_-]/g, '_');
+            doc.save(fileName);
+        }
+
+        function startNewFramework() {
+            // Reset form
+            document.getElementById('company').value = '';
+            document.getElementById('product').value = '';
+            document.getElementById('industry').value = '';
+            document.getElementById('targetAudience').value = '';
+            document.getElementById('keyFeatures').value = '';
+            document.getElementById('competitors').value = '';
+            document.getElementById('businessGoals').value = '';
+            document.getElementById('tonePreference').value = 'Professional and engaging';
+
+            // Clear stored data
+            currentData = null;
+
+            // Show input section
+            document.getElementById('resultsSection').classList.remove('show');
+            document.getElementById('inputSection').style.display = 'block';
+
+            // Focus on company name input
+            document.getElementById('company').focus();
+        }
+
+        // Allow Enter key to submit from required fields
+        document.addEventListener('DOMContentLoaded', function() {
+            ['company', 'product'].forEach(id => {
+                document.getElementById(id).addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        generateMessaging();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
